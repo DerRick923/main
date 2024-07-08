@@ -106,31 +106,8 @@ for f_idx=1:length(band)
 
         % TOPOPLOT
         % Per ogni banda di frequenze per ogni run
-        figure(f_idx)
-        %% cue
-        % dataCue_1 = mean(mean(ERD(cuePeriod(1):cuePeriod(2), :, tCk == classes(1)), 3), 1);
-        % dataCue_2 = mean(mean(ERD(cuePeriod(1):cuePeriod(2), :, tCk == classes(2)), 3), 1);
-        % dataCue = dataCue_2 - dataCue_1;
-        % c_cue = zeros(64, 1);
-        % for i=1:length(chanlocs_label)
-        %     for j = 1:length(recorded_channels)
-        %         if strcmpi(chanlocs_label{i}, recorded_channels{j})
-        %             if ~isnan(dataCue(j))
-        %                 c_cue(i) = dataCue(j);
-        %             else
-        %                 c_cue(i) = 0;
-        %             end
-        %         end
-        %     end
-        % end
-        % subplot(1,2,1)
-        % topoplot(squeeze(c_cue),chanlocs,'headrad', 'rim', 'maplimits', [-max(abs(c_cue)) max(abs(c_cue))]);
-        % axis image;
-        % title(['ERD/ERS cue (band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']) - bottom right - bottom left']);
-        % colorbar;
-
-
         % All cf for the two tasks
+        figure(f_idx)
         c_cfPeriod = [3*events.SampleRate trial_dur];
         dataCf_1 = mean(mean(ERD(c_cfPeriod(1):c_cfPeriod(2), :, tCk == classes(1)), 3), 1);
         dataCf_2 = mean(mean(ERD(c_cfPeriod(1):c_cfPeriod(2), :, tCk == classes(2)), 3), 1);
@@ -189,11 +166,37 @@ for f_idx=1:length(band)
 %     colorbar;
 
         subplot(2,ceil(length(matfiles)/2),runId)
-        topoplot(squeeze(c_feedb), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
+        topoplot(squeeze(c_feedb), chanlocs,'electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
         axis image;
         title(['Run ' num2str(runId) ', Band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']']);
         colorbar;
         sgtitle(['ERD Continuos Feedback in [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']'])
 
+
+        %% cue+cf
+        figure(length(band)+f_idx)
+        dataCue_1 = mean(mean(ERD(cuePeriod(1):cfPeriod(2), :, tCk == classes(1)), 3), 1);
+        dataCue_2 = mean(mean(ERD(cuePeriod(1):cfPeriod(2), :, tCk == classes(2)), 3), 1);
+        dataCue = dataCue_2 - dataCue_1;
+        c_cue = zeros(64, 1);
+        for i=1:length(chanlocs_label)
+            for j = 1:length(recorded_channels)
+                if strcmpi(chanlocs_label{i}, recorded_channels{j})
+                    if ~isnan(dataCue(j))
+                        c_cue(i) = dataCue(j);
+                    else
+                        c_cue(i) = 0;
+                    end
+                end
+            end
+        end
+        subplot(2,ceil(length(matfiles)/2),runId)
+        topoplot(squeeze(c_cue), chanlocs,'electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
+        axis image;
+        title(['Run ' num2str(runId) ', Band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']']);
+        colorbar;
+        sgtitle(['ERD from Cue to CF in [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']'])
+
     end
 end
+       
