@@ -158,21 +158,6 @@ end
     
         set(handles, 'clim', [0 max(max(climits))]);
         sgtitle(['Fisher score Subj: ' subject]);
-    
-        fig2=figure;
-        colormap('jet');
-        imagesc(mean(fischer_score(:,a,:),3)');
-        axis square;
-        colorbar;
-        set(gca, 'XTick', 1:nbands);
-        set(gca, 'XTickLabel', freq_intervals);
-        set(gca, 'YTick', 1:size(a,2));
-        set(gca, 'YTickLabel', channels_label(find(~strcmp(channels_label,''))));
-        xtickangle(90);
-        xlabel('Hz');
-        ylabel('channel');
-        title(['Mean FS Subj: ' subject]);
-
 
 
     fischer_score_total = NaN(nbands,nchannels);
