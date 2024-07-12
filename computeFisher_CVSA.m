@@ -7,6 +7,7 @@ addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-W
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
+addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -109,40 +110,51 @@ nruns = length(Runs);
 
 classes = [730, 731];
 nclasses = length(classes);
-fischer_score = NaN(nbands,nchannels,nruns);
-F2S = NaN(nbands*nchannels,nruns);
-for rId=1:nruns
-    rindex = new_Rk==Runs(rId);
-    cmu = NaN(nbands,nchannels,2);
-    csigma = NaN(nbands,nchannels,2);
-
-    for cId=1:nclasses
-       cindex = rindex & new_Ck==classes(cId);
-       cmu(:,:,cId) = squeeze(mean(ERD(cindex,:,:)));
-       csigma(:,:,cId) = squeeze(std(ERD(cindex,:,:)));
+% fischer_score = NaN(nbands,nchannels,nruns);
+% F2S = NaN(nbands*nchannels,nruns);
+% for rId=1:nruns
+%     rindex = new_Rk==Runs(rId);
+%     cmu = NaN(nbands,nchannels,2);
+%     csigma = NaN(nbands,nchannels,2);
+% 
+%     for cId=1:nclasses
+%        cindex = rindex & new_Ck==classes(cId);
+%        cmu(:,:,cId) = squeeze(mean(ERD(cindex,:,:)));
+%        csigma(:,:,cId) = squeeze(std(ERD(cindex,:,:)));
+%     end
+%     fischer_score(:,:,rId) = abs(cmu(:,:,2)-cmu(:,:,1))./sqrt((csigma(:,:,1).^2 + csigma(:,:,2).^2));
+% end
+%% Compute CVA
+cva = nan(nbands, nchannels, nruns);
+%cva = nan(length(intervals)+2, length(idx_selFreqs), nchannels);
+for idx_r = 1:nruns
+    for i= 1:nbands
+        rindex = new_Rk==Runs(idx_r);
+        c_data = squeeze(ERD(rindex,i,:));
+        c_ck = new_Ck(rindex);
+        c = cva_tun_opt(c_data, c_ck);
+        cva(i, :, idx_r) = c;
     end
-    fischer_score(:,:,rId) = abs(cmu(:,:,2)-cmu(:,:,1))./sqrt((csigma(:,:,1).^2 + csigma(:,:,2).^2));
 end
 
-
 %% Visualization
-    %% Visualization Fisher score
-    disp('[proc] |- Visualizing fisher score for offline runs');
-    freq_intervals = {'6-9', '9-12', '8-14', '12-15', '15-18', '18-21'};
-    OfflineRuns = unique(new_Rk);
-    NumCols = length(OfflineRuns);
-    climits = [];
-    handles = nan(length(OfflineRuns), 1);
-    a = find(~strcmp(channels_label,''));
-    fig1 = figure;
-    colormap('jet');
-    for rId = 1:length(OfflineRuns)
+%% Visualization Fisher score
+disp('[proc] |- Visualizing fisher score for offline runs');
+freq_intervals = {'6-9', '9-12', '8-14', '12-15', '15-18', '18-21'};
+OfflineRuns = unique(new_Rk);
+NumCols = length(OfflineRuns);
+climits = [];
+handles = nan(length(OfflineRuns), 1);
+a = find(~strcmp(channels_label,''));
+fig1 = figure;
+colormap('jet');
+for rId = 1:length(OfflineRuns)
         subplot(2, ceil(NumCols/2), rId);
-        imagesc(fischer_score(:, a, OfflineRuns(rId))');
+        imagesc(cva(:, a, OfflineRuns(rId))');
         axis square;
         colorbar;
         set(gca, 'XTick', 1:nbands);
-        set(gca, 'XTickLabel', freq_intervals);       %così appaiono, come label, solo [6 9 9 12 8 14]
+        set(gca, 'XTickLabel', freq_intervals);
         set(gca, 'YTick', 1:size(a,2));
         set(gca, 'YTickLabel', channels_label(find(~strcmp(channels_label,''))));
         xtickangle(90);
@@ -159,29 +171,42 @@ end
         set(handles, 'clim', [0 max(max(climits))]);
         sgtitle(['Fisher score Subj: ' subject]);
 
+% fisher_score_total = NaN(nbands,nchannels);
+    % %F2S_total = NaN(nbands*nchannels,nruns);
+    % cmu_total = NaN(nbands,nchannels,2);
+    % csigma_total = NaN(nbands,nchannels,2);
+    % for cId=1:nclasses
+    %        cindex_new = new_Ck==classes(cId);
+    %        cmu_total(:,:,cId) = squeeze(mean(ERD(cindex_new,:,:)));
+    %        csigma_total(:,:,cId) = squeeze(std(ERD(cindex_new,:,:)));
+    % end
+    % fischer_score_total(:,:) = abs(cmu_total(:,:,2)-cmu_total(:,:,1))./sqrt((csigma_total(:,:,1).^2 + csigma_total(:,:,2).^2));
+cva_total = NaN(nbands,nchannels);
+for i= 1:nbands
+        c_data = squeeze(ERD(:,i,:));
+        c_ck = new_Ck;
+        c = cva_tun_opt(c_data, c_ck);
+        cva_total(i, :) = c;
+end
+fig2=figure;
+colormap('jet');
+imagesc(cva_total(:,a)');
+axis square;
+colorbar;
+set(gca, 'XTick', 1:nbands);
+set(gca, 'XTickLabel', freq_intervals);
+set(gca, 'YTick', 1:size(a,2));
+set(gca, 'YTickLabel', channels_label(find(~strcmp(channels_label,''))));
+xtickangle(90);
+xlabel('Hz');
+ylabel('channel');
+title(['Total FS Subj: ' subject]);
 
-    fischer_score_total = NaN(nbands,nchannels);
-    %F2S_total = NaN(nbands*nchannels,nruns);
-    cmu_total = NaN(nbands,nchannels,2);
-    csigma_total = NaN(nbands,nchannels,2);
-    for cId=1:nclasses
-           cindex_new = new_Ck==classes(cId);
-           cmu_total(:,:,cId) = squeeze(mean(ERD(cindex_new,:,:)));
-           csigma_total(:,:,cId) = squeeze(std(ERD(cindex_new,:,:)));
-    end
-    fischer_score_total(:,:) = abs(cmu_total(:,:,2)-cmu_total(:,:,1))./sqrt((csigma_total(:,:,1).^2 + csigma_total(:,:,2).^2));
 
-        fig3=figure;
-        colormap('jet');
-        imagesc(fischer_score_total(:,a)');
-        axis square;
-        colorbar;
-        set(gca, 'XTick', 1:nbands);
-        set(gca, 'XTickLabel', freq_intervals);
-        set(gca, 'YTick', 1:size(a,2));
-        set(gca, 'YTickLabel', channels_label(find(~strcmp(channels_label,''))));
-        xtickangle(90);
-        xlabel('Hz');
-        ylabel('channel');
-        title(['Total FS Subj: ' subject]);
+
+% saving fischer score for UI
+rowLabels = channels_label(find(~strcmp(channels_label,'')));
+colLabels = freq_intervals;
+cva_selected = cva_total(:,a)';
+save('fischer_scores.mat', 'cva_selected', 'rowLabels', 'colLabels');
    
