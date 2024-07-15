@@ -14,7 +14,7 @@ channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4'
         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
 % file info
-subject = 'g2';
+subject = 'c7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\mat_selectedTrials'];
@@ -113,7 +113,8 @@ for f_idx=1:length(band)
     cfPeriod = [3 4; 4 5; 5 6; 6 (trial_dur/events.SampleRate)]*events.SampleRate;
     
     %Select channels
-    recorded_channels = {'P3', 'Pz', 'P4', 'POz', 'O1', 'O2','P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'Oz'};
+    recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
+        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
     %recorded_channels = {'Fp1','Fp2','F3','Fz','F4','FC1','FC2','C3','Cz','C4','CP1','CP2','P3','Pz','P4','POz','O1','O2','F1','F2','FC3','FCz','FC4','C1','C2','CP3','CPz','CP4','P5','P1','P2','P6','PO5','PO3','PO4','PO6','PO7','PO8','Oz'};
     % Trova gli indici dei canali registrati nella struct chanlocs.
     
@@ -212,7 +213,7 @@ for f_idx=1:length(band)
         end
     figure(1);
     subplot(2,3,f_idx)
-    topoplot(squeeze(c_feedb), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
+    topoplot(squeeze(c_feedb), chanlocs, 'style','both','electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
     axis image;
     title(['ERD/ERS (band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']) -- br - bl -- cf from 0' ...
          's to ' num2str(ceil((c_cfPeriod(2) - c_cfPeriod(1))/events.SampleRate)) 's']);
@@ -227,8 +228,8 @@ for f_idx=1:length(band)
         for i=1:length(chanlocs_label)
             for j = 1:length(recorded_channels)
                 if strcmpi(chanlocs_label{i}, recorded_channels{j})
-                    if ~isnan(dataCf(j))
-                    total_logb(i) = dataCf(j);
+                    if ~isnan(whole_erd(j))
+                    total_logb(i) = whole_erd(j);
                     else
                     total_logb(i) = 0;
                     end
@@ -237,7 +238,7 @@ for f_idx=1:length(band)
         end
     
     subplot(2,3,f_idx)
-    topoplot(squeeze(total_logb), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(total_logb)) max(abs(total_logb))]);
+    topoplot(squeeze(total_logb), chanlocs, 'style','both','electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(total_logb)) max(abs(total_logb))]);
     axis image;
     colorbar;
     sgtitle(['Logband Total Signal Subj: ' subject]);
@@ -251,8 +252,8 @@ for f_idx=1:length(band)
         for i=1:length(chanlocs_label)
             for j = 1:length(recorded_channels)
                 if strcmpi(chanlocs_label{i}, recorded_channels{j})
-                    if ~isnan(dataCf(j))
-                    cuetoc_feed(i) = dataCf(j);
+                    if ~isnan(cuetocf_erd(j))
+                    cuetoc_feed(i) = cuetocf_erd(j);
                     else
                     cuetoc_feed(i) = 0;
                     end
@@ -260,7 +261,7 @@ for f_idx=1:length(band)
             end
         end
     subplot(2,3,f_idx)
-    topoplot(squeeze(cuetoc_feed), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(cuetoc_feed)) max(abs(cuetoc_feed))]);
+    topoplot(squeeze(cuetoc_feed), chanlocs, 'style','both','electrodes','on','electrodes','labels', 'headrad', 'rim', 'maplimits', [-max(abs(cuetoc_feed)) max(abs(cuetoc_feed))]);
     axis image;
     colorbar;
     sgtitle(['Logband Cue to Cf Subj: ' subject]);
