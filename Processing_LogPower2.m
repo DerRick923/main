@@ -5,16 +5,19 @@ clc
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
+addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
 
-%channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
-%        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
-channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
-        'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
+channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
+       '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
+
+% channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
+%         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
 % file info
-subject = 'h7';
+subject = 'c7';
+
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\mat_selectedTrials'];
@@ -37,8 +40,10 @@ for f_idx=1:length(band)
         file = fullfile(path, matfiles(runId).name);
         load(file);
         curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
-        slap = curr_s*lap;
-        s = slap;
+
+        %slap = curr_s*lap;
+        %s = slap;
+        s = curr_s;
         curr_h = header.EVENT;
         events.TYP = curr_h.TYP;
         events.DUR = curr_h.DUR;
@@ -96,7 +101,8 @@ for f_idx=1:length(band)
         chanlocs_label = {chanlocs.labels};
 
         %Select channels
-        recorded_channels = {'P3', 'Pz', 'P4', 'POz', 'O1', 'O2','P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'Oz'};
+        recorded_channels = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
+        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
         %recorded_channels = {'Fp1','Fp2','F3','Fz','F4','FC1','FC2','C3','Cz','C4','CP1','CP2','P3','Pz','P4','POz','O1','O2','F1','F2','FC3','FCz','FC4','C1','C2','CP3','CPz','CP4','P5','P1','P2','P6','PO5','PO3','PO4','PO6','PO7','PO8','Oz'};
 % Trova gli indici dei canali registrati nella struct chanlocs.
 % recorded_indices = zeros(1,length(recorded_channels));
@@ -154,19 +160,19 @@ for f_idx=1:length(band)
         %     end
         %     subplot(1,2,1)
         %     topoplot(squeeze(c_feedb_1), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(dataCf_1)) max(abs(dataCf_1))]);
-%     axis image;
-%     % title(['ERD/ERS (band [' num2str(band(1)) '-' num2str(band(2)) ']) -- br - bl -- cf from 0' ...
-% %     's to ' num2str(ceil((c_cfPeriod(2) - c_cfPeriod(1))/sampleRate)) 's']);
-%     colorbar;
-%     subplot(1,2,2)
-%     topoplot(squeeze(c_feedb_2), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(c_feedb_2)) max(abs(c_feedb_2))]);
-%     axis image;
-%     % title(['ERD/ERS (band [' num2str(band(1)) '-' num2str(band(2)) ']) -- br - bl -- cf from 0' ...
-% %     's to ' num2str(ceil((c_cfPeriod(2) - c_cfPeriod(1))/sampleRate)) 's']);
-%     colorbar;
+        %     axis image;
+        %     % title(['ERD/ERS (band [' num2str(band(1)) '-' num2str(band(2)) ']) -- br - bl -- cf from 0' ...
+        % %     's to ' num2str(ceil((c_cfPeriod(2) - c_cfPeriod(1))/sampleRate)) 's']);
+        %     colorbar;
+        %     subplot(1,2,2)
+        %     topoplot(squeeze(c_feedb_2), chanlocs, 'headrad', 'rim', 'maplimits', [-max(abs(c_feedb_2)) max(abs(c_feedb_2))]);
+        %     axis image;
+        %     % title(['ERD/ERS (band [' num2str(band(1)) '-' num2str(band(2)) ']) -- br - bl -- cf from 0' ...
+        % %     's to ' num2str(ceil((c_cfPeriod(2) - c_cfPeriod(1))/sampleRate)) 's']);
+        %     colorbar;
 
         subplot(2,ceil(length(matfiles)/2),runId)
-        topoplot(squeeze(c_feedb), chanlocs,'electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
+        topoplot(squeeze(c_feedb), chanlocs,'electrodes','labelpoint','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
         axis image;
         title(['Run ' num2str(runId) ', Band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']']);
         colorbar;
@@ -191,7 +197,7 @@ for f_idx=1:length(band)
             end
         end
         subplot(2,ceil(length(matfiles)/2),runId)
-        topoplot(squeeze(c_cue), chanlocs,'electrodes','on','electrodes','labels','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
+        topoplot(squeeze(c_cue), chanlocs,'electrodes','labelpoint','headrad', 'rim', 'maplimits', [-max(abs(c_feedb)) max(abs(c_feedb))]);
         axis image;
         title(['Run ' num2str(runId) ', Band [' num2str(sel_band(1)) '-' num2str(sel_band(2)) ']']);
         colorbar;
@@ -199,4 +205,3 @@ for f_idx=1:length(band)
 
     end
 end
-       
