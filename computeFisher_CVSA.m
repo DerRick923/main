@@ -6,8 +6,10 @@ clc
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
+addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
+
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -26,6 +28,7 @@ path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\mat_selectedTrial
 % ubuntu path = ['/home/riccardo/test_ws/records/ ' subject '/matselected_Trials];
 classLb = {'Task 1','Task 2'};
 classes = [730,731];
+nclasses = length(classes);
 
 matfiles = dir(fullfile(path, '*.mat'));
 load(lap_path);
@@ -39,8 +42,8 @@ for i=1:length(matfiles)
     file = fullfile(path, matfiles(i).name);
     load(file);
     curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
-    slap = curr_s*lap;
-    curr_s = slap;
+    % slap = curr_s*lap;
+    % curr_s = slap;
     curr_h = header.EVENT;
     %Create Rk vector (run)
     cRk = i*ones(size(curr_s,1),1);
@@ -73,12 +76,13 @@ end
 %si estraggono i dati dalla fixation alla fine del feedback
 trial_dur = min(TrialStop-TrialStart);
 TrialData = []; new_Rk = []; new_Ck = [];
+DataperTrial = NaN(trial_dur,nchannels,nbands,ntrials);
 tCk = zeros(ntrials,1);
 for trId=1:ntrials
     cstart = TrialStart(trId);
     cstop = cstart + trial_dur - 1;
 
-%TrialData(:,:,:,trId) = s_processed(cstart:cstop,:,:);
+    DataperTrial(:,:,:,trId) = s_processed(cstart:cstop,:,:);
 
     c_TrialData = s_processed(cstart:cstop,:,:);
     TrialData = cat(1,TrialData,c_TrialData);
@@ -102,14 +106,12 @@ end
 %% Compute ERD and LogBandPOwer [samples x channels x bands] con tutti i trial
 %ERD = log(TrialData./Baseline);
 ERD = log(TrialData);       %Logband
-ERD = permute(ERD, [1 3 2]);
+ERD_p= permute(ERD, [1 3 2]);
 
 %% Compute Fischer score
 Runs = unique(Rk);
 nruns = length(Runs);
 
-classes = [730, 731];
-nclasses = length(classes);
 % fischer_score = NaN(nbands,nchannels,nruns);
 % F2S = NaN(nbands*nchannels,nruns);
 % for rId=1:nruns
@@ -130,7 +132,7 @@ cva = nan(nbands, nchannels, nruns);
 for idx_r = 1:nruns
     for i= 1:nbands
         rindex = new_Rk==Runs(idx_r);
-        c_data = squeeze(ERD(rindex,i,:));
+        c_data = squeeze(ERD_p(rindex,i,:));
         c_ck = new_Ck(rindex);
         c = cva_tun_opt(c_data, c_ck);
         cva(i, :, idx_r) = c;
@@ -165,11 +167,9 @@ for rId = 1:length(OfflineRuns)
         
         climits = cat(2, climits, get(gca, 'CLim'));
         handles(OfflineRuns(rId)) = gca;
-    end
-    
-    
-        set(handles, 'clim', [0 max(max(climits))]);
-        sgtitle(['Fisher score Subj: ' subject]);
+end
+set(handles, 'clim', [0 max(max(climits))]);
+sgtitle(['Fisher score Subj: ' subject]);
 
 % fisher_score_total = NaN(nbands,nchannels);
     % %F2S_total = NaN(nbands*nchannels,nruns);
@@ -183,7 +183,7 @@ for rId = 1:length(OfflineRuns)
     % fischer_score_total(:,:) = abs(cmu_total(:,:,2)-cmu_total(:,:,1))./sqrt((csigma_total(:,:,1).^2 + csigma_total(:,:,2).^2));
 cva_total = NaN(nbands,nchannels);
 for i= 1:nbands
-        c_data = squeeze(ERD(:,i,:));
+        c_data = squeeze(ERD_p(:,i,:));
         c_ck = new_Ck;
         c = cva_tun_opt(c_data, c_ck);
         cva_total(i, :) = c;
@@ -204,9 +204,43 @@ title(['Total FS Subj: ' subject]);
 
 
 
+%% Topoplot LogBand power
+ERDpertrial = log(DataperTrial);
+chanlocs_label = {chanlocs.labels};
+fixPeriod = [1/events.SampleRate 2]*events.SampleRate;
+cuePeriod = [2 3]*events.SampleRate;
+cfPeriod = [3 4; 4 5; 5 6; 6 (trial_dur/events.SampleRate)]*events.SampleRate;
+    
+%Select channels
+recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
+'', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
+    cuetocf_erd1 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(1)), 4), 1);
+    cuetocf_erd2 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(2)), 4), 1);
+    cuetocf_erd = squeeze(cuetocf_erd2-cuetocf_erd1);
+    cuetoc_feed = zeros(64, nbands);
+        for i=1:length(chanlocs_label)
+            for j = 1:length(recorded_channels)
+                if strcmpi(chanlocs_label{i}, recorded_channels{j})
+                    if ~isnan(cuetocf_erd(j))
+                    cuetoc_feed(i,:) = cuetocf_erd(j,:);
+                    else
+                    cuetoc_feed(i,:) = 0;
+                    end
+                end
+            end
+        end
+% cuetocfeed contiene i valori della logband power per ogni frequency band
+% corrispondenti ai canali che vengono registrati
+
+
+
 % saving fischer score for UI
 rowLabels = channels_label(find(~strcmp(channels_label,'')));
 colLabels = freq_intervals;
 cva_selected = cva_total(:,a)';
-save('fischer_scores.mat', 'cva_selected', 'rowLabels', 'colLabels');
-   
+save('fischer_scores.mat', 'cva_selected', 'rowLabels', 'colLabels','band');
+
+% saving logband for UI
+logbandPower = cuetoc_feed;
+electrodePos = chanlocs;
+save('logband_power.mat','logbandPower','electrodePos');
