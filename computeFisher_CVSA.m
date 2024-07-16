@@ -17,8 +17,7 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 % channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
 %         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
-% channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'POZ', 'O1', 'O2', '', ...
-%        '', '', '', '', '', '', '', '', '', '', '', '', '', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
+
 % file info
 subject = 'c7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';

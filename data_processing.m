@@ -8,8 +8,8 @@ function s_movavg = data_processing(signal, nchannels, sampleRate, band, filtOrd
 sfilt = zeros(size(signal));
     for chId=1:nchannels
     %Filtfilt
-    sfilt(:,chId) = filtfilt(b_low,a_low,signal(:,chId));
-    sfilt(:,chId) = filtfilt(b_high,a_high,sfilt(:,chId));
+    sfilt(:,chId) = filter(b_low,a_low,signal(:,chId));
+    sfilt(:,chId) = filter(b_high,a_high,sfilt(:,chId));
     end
 
 %Squaring

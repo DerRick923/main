@@ -14,7 +14,7 @@ addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
          'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
 % file info
-subject = ['g2'];
+subject = 'c7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\gdf'];
@@ -32,9 +32,9 @@ s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]);
  for i=1:length(gdf_files)
         file = fullfile(path, gdf_files(i).name);
         [curr_s,h] = sload(file);
-        curr_s = curr_s(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
-        slap = curr_s*lap;
-        s = slap;
+        s = curr_s(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
+        %slap = curr_s*lap;
+        %s = slap;
         curr_h = h.EVENT;
         events.TYP = curr_h.TYP;
         events.DUR = curr_h.DUR;
@@ -47,9 +47,13 @@ s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]);
         
         %% Check valori del canale EOG
         % i dati sono nell'ordine dei microVolt: 2.02*10^4*10^-6
-        targetElectrode = 'EOG';
-        eog_ch= find(strcmp(channels_label, targetElectrode));
-        idx_discard = find(abs(s(:,eog_ch))>2.5e+04); %threshold a 25mV
+        target_electrodes = {'FP1','FP2','','','','','','','','','','','','','','','','','EOG', ...
+         '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''};
+        eog_ch= find(strcmp(channels_label, target_electrodes));
+        idx_discard = [];
+        for j=1:length(eog_ch)
+        idx_discard(:,j) = find(abs(s(:,eog_ch(j)))>2.5e+04); %threshold a 25mV
+        end
 
         %% Create Vector labels
         [nsamples,nchannels] = size(s);
@@ -63,7 +67,6 @@ s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]);
         %quello dopo o li pongo a zero.
         %Posso usare il find per trovare gli indici
         
-        % Con g2 tutte le run sono oltre il threshold, negli altri apposto
         if isempty(idx_discard)
             disp('No trial to be discarded')
         else

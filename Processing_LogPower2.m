@@ -106,11 +106,11 @@ for f_idx=1:length(band)
         recorded_channels = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
         '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
         %recorded_channels = {'Fp1','Fp2','F3','Fz','F4','FC1','FC2','C3','Cz','C4','CP1','CP2','P3','Pz','P4','POz','O1','O2','F1','F2','FC3','FCz','FC4','C1','C2','CP3','CPz','CP4','P5','P1','P2','P6','PO5','PO3','PO4','PO6','PO7','PO8','Oz'};
-% Trova gli indici dei canali registrati nella struct chanlocs.
-% recorded_indices = zeros(1,length(recorded_channels));
-% for i = 1:length(recorded_channels)
-%     recorded_indices(i) = find(strcmp({chanlocs.labels},recorded_channels{i}));
-% end
+        % Trova gli indici dei canali registrati nella struct chanlocs.
+        % recorded_indices = zeros(1,length(recorded_channels));
+        % for i = 1:length(recorded_channels)
+        %     recorded_indices(i) = find(strcmp({chanlocs.labels},recorded_channels{i}));
+        % end
 
         % TOPOPLOT
         % Per ogni banda di frequenze per ogni run

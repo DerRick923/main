@@ -25,14 +25,16 @@ filterOrder = 4;
 % else
 %     disp('No such subject')
 % end
-selected_features = load(filename_features);
-bands = selected_features(:,2);
-selchs = selected_features(:,1);
+features = load(filename_features); %struct
+bands = features.selectedFeatures(:,2);
+selchs = features.selectedFeatures(:,1);
 % not modification needed for these informations
 sampleRate = 512;
-sfile = ['/home/paolo/cvsa_ws/record/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
+%sfile = ['/home/paolo/cvsa_ws/record/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
+sfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_f_cf_selectedband.mat'];
 
-path = ['/home/paolo/cvsa_ws/record/' c_subject '/mat_selectedTrials'];
+%path = ['/home/paolo/cvsa_ws/record/' c_subject '/mat_selectedTrials'];
+path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
 files = dir(fullfile(path, '*.mat'));
 
 channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
@@ -103,8 +105,19 @@ for idx_f = 1:length(files)
             start_trial = cuePOS(i);
             end_trial = cfPOS(i) + cfDUR(i) - 1;
             % division for frameSize
-            end_trial = ceil((end_trial-start_trial)/32)*32 + start_trial;
+            end_trial = int64(ceil(single(end_trial-start_trial)/32)*32) + start_trial;
             data = signal(start_trial:end_trial,:);
+
+            % eye movement check
+            threshold = 2.5e+04; %[25 mV]
+            disp('Checking data for eye movement')
+            result = eye_movement_check(data,channels_label,threshold); 
+                if result
+                    disp(['Eye movement detected: trial ' num2str(i) '/' num2str(nTrials) 'to be discarded'])
+                    continue
+                else
+                    disp('No eye movement detected')
+                end 
 
             % application of the buffer
             info.trialStart = cat(1, info.trialStart, size(X,1));
