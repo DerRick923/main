@@ -18,7 +18,9 @@ subject = ['g2'];
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\gdf'];
-% ubuntu path = ['/home/riccardo/test_ws/records/' subject '/matselected_Trials];
+% ubuntu path = ['/home/riccardo/test_ws/records/' subject '/matselected_Trials'];
+% ubuntu lap_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat'];
+% ubuntu chanlocs_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Chanlocs/new_chanlocs64.mat'];
 classLb = {'Task 1','Task 2'};
 classes = [730,731];
 
