@@ -19,10 +19,10 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 
 
 % file info
-subject = 'c7';
+c_subject = 'h7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
-path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\mat_selectedTrials'];
+path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
 % path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\ ' subject '\gdf'];
 % ubuntu path = ['/home/riccardo/test_ws/records/ ' subject '/matselected_Trials];
 % ubuntu lap_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat'];
@@ -43,10 +43,10 @@ for i=1:length(matfiles)
     file = fullfile(path, matfiles(i).name);
     load(file);
     curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
-    % slap = curr_s*lap;
-    % curr_s = slap;
+    %slap = curr_s*lap;
+    %curr_s = slap;
     curr_h = header.EVENT;
-    %Create Rk vector (run)
+    % Create Rk vector (run)
     cRk = i*ones(size(curr_s,1),1);
     Rk = cat(1,Rk,cRk);
     % concateno eventi
@@ -170,7 +170,7 @@ for rId = 1:length(OfflineRuns)
         handles(OfflineRuns(rId)) = gca;
 end
 set(handles, 'clim', [0 max(max(climits))]);
-sgtitle(['Fisher score Subj: ' subject]);
+sgtitle(['Fisher score Subj: ' c_subject]);
 
 % fisher_score_total = NaN(nbands,nchannels);
     % %F2S_total = NaN(nbands*nchannels,nruns);
@@ -201,7 +201,7 @@ set(gca, 'YTickLabel', channels_label(find(~strcmp(channels_label,''))));
 xtickangle(90);
 xlabel('Hz');
 ylabel('channel');
-title(['Total FS Subj: ' subject]);
+title(['Total FS Subj: ' c_subject]);
 
 
 
@@ -233,15 +233,18 @@ recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ'
 % cuetocfeed contiene i valori della logband power per ogni frequency band
 % corrispondenti ai canali che vengono registrati
 
-
+% saving subject id
+save('c_subject','c_subject');
 
 % saving fischer score for UI
+feature_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\fischer_scores.mat'];
 rowLabels = channels_label(find(~strcmp(channels_label,'')));
 colLabels = freq_intervals;
 cva_selected = cva_total(:,a)';
-save('fischer_scores.mat', 'cva_selected', 'rowLabels', 'colLabels','band');
+save(feature_file, 'cva_selected', 'rowLabels', 'colLabels','band');
 
 % saving logband for UI
+logband_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_power.mat'];
 logbandPower = cuetoc_feed;
 electrodePos = chanlocs;
-save('logband_power.mat','logbandPower','electrodePos');
+save(logband_file,'logbandPower','electrodePos');

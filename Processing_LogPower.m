@@ -38,8 +38,8 @@ for f_idx=1:length(band)
         file = fullfile(path, matfiles(i).name);
         load(file);
         curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
-        slap = curr_s*lap;
-        curr_s = slap;
+        %slap = curr_s*lap;
+        %curr_s = slap;
         curr_h = header.EVENT;
         % concateno eventi
         events.TYP = cat(1, events.TYP, curr_h.TYP);

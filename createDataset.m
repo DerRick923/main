@@ -1,6 +1,6 @@
 
 % create the dataset log band power, selected channels and selected freq
-function [sfile,X,y] = createDataset(c_subject,filename_features)
+function [sfile,X,y] = createDataset(c_subject)
 
 %% informations
 train_percentage = 0.75;
@@ -25,7 +25,8 @@ filterOrder = 4;
 % else
 %     disp('No such subject')
 % end
-features = load(filename_features); %struct
+features_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\selected_features.mat'];
+features = load(features_file); %struct
 bands = features.selectedFeatures(:,2);
 selchs = features.selectedFeatures(:,1);
 % not modification needed for these informations
@@ -113,7 +114,7 @@ for idx_f = 1:length(files)
             disp('Checking data for eye movement')
             result = eye_movement_check(data,channels_label,threshold); 
                 if result
-                    disp(['Eye movement detected: trial ' num2str(i) '/' num2str(nTrials) 'to be discarded'])
+                    disp(['Eye movement detected: trial ' num2str(i) '/' num2str(nTrials) ' to be discarded'])
                     continue
                 else
                     disp('No eye movement detected')
@@ -162,8 +163,13 @@ for idx_f = 1:length(files)
         end
 
         %% take only interested values
+        % Check if trials are stored in X_temp
+        if isempty(X_temp)
+            disp('Trial skipped')
+            continue
+        else
         disp('      Take only interested channels for that band')
-        % In this way it's possible to keep al the previuosly selected
+        % In this way it's possible to keep all the previuosly selected
         % channels from the UI and compare them to the string of known
         % channel labels
         %selch = selchs(idx_band);
@@ -177,8 +183,9 @@ for idx_f = 1:length(files)
             info.startNewFile = cat(1, info.startNewFile, size(X,1));
             y = cat(1, y, y_temp);
         end
-
+        
         X_band = cat(2, X_band, X_temp(:,idx_interest_ch));
+        end
 
         if idx_f == 1
             info.idx_selchs = cat(1, info.idx_selchs, idx_interest_ch);
@@ -186,9 +193,16 @@ for idx_f = 1:length(files)
     end
     X = cat(1, X, X_band);
 end
-info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
+if ~isempty(info.trialStart)
+    info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
+    %% save the values
+    %X = X(:, idx_interest_ch);
+    save(sfile, 'X', 'y', 'info');
+else
+    error('No trials to be saved')
+    
+end
 
-%% save the values
-%X = X(:, idx_interest_ch);
-save(sfile, 'X', 'y', 'info');
+
+
 
