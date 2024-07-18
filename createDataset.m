@@ -168,27 +168,28 @@ for idx_f = 1:length(files)
             disp('Trial skipped')
             continue
         else
-        disp('      Take only interested channels for that band')
-        % In this way it's possible to keep all the previuosly selected
-        % channels from the UI and compare them to the string of known
-        % channel labels
-        %selch = selchs(idx_band);
-        idx_interest_ch = zeros(1, numel(selchs));
-        for k=1:numel(selchs)
-            idx_interest_ch(k) = find(strcmp(channels_label, selchs{k}));
-        end
-
-        % as before
-        if idx_band == 1
-            info.startNewFile = cat(1, info.startNewFile, size(X,1));
-            y = cat(1, y, y_temp);
-        end
-        
-        X_band = cat(2, X_band, X_temp(:,idx_interest_ch));
-        end
-
-        if idx_f == 1
-            info.idx_selchs = cat(1, info.idx_selchs, idx_interest_ch);
+            disp('      Take only interested channels for that band')
+            % In this way it's possible to keep all the previuosly selected
+            % channels from the UI and compare them to the string of known
+            % channel labels
+            selch = selchs(idx_band);
+            idx_interest_ch = zeros(1, numel(selch));
+            for k=1:numel(selch)
+                idx_interest_ch(k) = find(strcmp(channels_label, selch));
+            end
+    
+            % as before
+            if idx_band == 1
+                info.startNewFile = cat(1, info.startNewFile, size(X,1));
+                y = cat(1, y, y_temp);
+            end
+           
+            X_band = cat(2, X_band, X_temp(:,idx_interest_ch));
+    
+            if idx_f == 1
+                info.idx_selchs = cat(1, info.idx_selchs, idx_interest_ch);
+                disp(size(info.idx_selchs))
+            end
         end
     end
     X = cat(1, X, X_band);
