@@ -19,7 +19,7 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 
 
 % file info
-c_subject = 'h7';
+c_subject = 'c7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
@@ -35,13 +35,19 @@ matfiles = dir(fullfile(path, '*.mat'));
 load(lap_path);
 load(chanlocs_path);
 
+%for ubuntu and gdf
+%files = dir(fullfile(path, '*.gdf'));
+
 band = {[6 9], [9 12], [8 14], [12 15], [15 18], [18 21]};
 nbands = length(band);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]); Rk=[];
 for i=1:length(matfiles)
     file = fullfile(path, matfiles(i).name);
-    load(file);
+    load(file); 
+    % file = fullfile(path, files(i).name);
+    % [signal,header] = sload(file);
+
     curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
     %slap = curr_s*lap;
     %curr_s = slap;
@@ -238,6 +244,7 @@ save('c_subject','c_subject');
 
 % saving fischer score for UI
 feature_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\fischer_scores.mat'];
+% feature_file = [/home/riccardo/test_ws/records/' c_subject '/dataset/fischer_scores.mat'];
 rowLabels = channels_label(find(~strcmp(channels_label,'')));
 colLabels = freq_intervals;
 cva_selected = cva_total(:,a)';
@@ -245,6 +252,7 @@ save(feature_file, 'cva_selected', 'rowLabels', 'colLabels','band');
 
 % saving logband for UI
 logband_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_power.mat'];
+% logband_file = [/home/riccardo/test_ws/records/' c-subject '/dataset/logband_power.mat'];
 logbandPower = cuetoc_feed;
 electrodePos = chanlocs;
 save(logband_file,'logbandPower','electrodePos');

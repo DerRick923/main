@@ -26,17 +26,20 @@ filterOrder = 4;
 %     disp('No such subject')
 % end
 features_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\selected_features.mat'];
+%feature_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
 features = load(features_file); %struct
 bands = features.selectedFeatures(:,2);
 selchs = features.selectedFeatures(:,1);
 % not modification needed for these informations
 sampleRate = 512;
-%sfile = ['/home/paolo/cvsa_ws/record/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
+%sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
 sfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_f_cf_selectedband.mat'];
 
-%path = ['/home/paolo/cvsa_ws/record/' c_subject '/mat_selectedTrials'];
-path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
-files = dir(fullfile(path, '*.mat'));
+%path = ['/home/riccardo/test_ws/records/' c_subject '/mat_selectedTrials'];
+%path = ['home/riccardo/test_ws/records/' c_subject '/gdf];
+%path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
+path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\gdf'];
+files = dir(fullfile(path, '*.gdf'));
 
 channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -63,7 +66,8 @@ for idx_f = 1:length(files)
     file = fullfile(path, files(idx_f).name);
     disp(['file (' num2str(idx_f) '/' num2str(length(files))  '): ', file])
     %file = '/home/paolo/prova32ch.gdf';
-    load(file);
+    %load(file);
+    [signal, header] = sload(file);
     info.files = cat(1, info.files, files(idx_f).name);
     nchannels = length(channels_label);
 
@@ -77,11 +81,21 @@ for idx_f = 1:length(files)
     cfPOS  = events.POS(events.TYP == 781);
     cfDUR  = events.DUR(events.TYP == 781);
     nTrials = length(cueTYP);
+     if(contains(file, 'calibration')) %% for gdf not mat
+        cuePOS = cuePOS(3:end) - 1;
+        cueTYP = cueTYP(3:end);
+        cueDUR = cueDUR(3:end);
+        cfPOS  = events.POS(events.TYP == 781)-1;
+        nTrials = length(cueTYP);
+     end
 
     %% Initialization variables
     disp('   Initialization variables')
     frameSize = 32;
-    bufferSize = 512; 
+    bufferSize = 512;
+    if idx_f==1
+        prev_file = 0;
+    end
     X_band = [];
     s_band = [];
     s_pow = [];
@@ -121,7 +135,9 @@ for idx_f = 1:length(files)
                 end 
 
             % application of the buffer
-            info.trialStart = cat(1, info.trialStart, size(X,1));
+            if idx_band == 1
+            info.trialStart = cat(1, info.trialStart, size(X_temp,1)+prev_file);
+            end
             nchunks = (end_trial-start_trial) / 32;
             for j = 1:nchunks
                 frame = data((j-1)*frameSize+1:j*frameSize,:);
@@ -158,7 +174,7 @@ for idx_f = 1:length(files)
 
             % save the dur of the trial only the first time a band is done
             if idx_band == 1
-                info.trialDUR = cat(1, info.trialDUR, size(X,1)-info.trialStart(end));
+                info.trialDUR = cat(1, info.trialDUR, size(X_temp,1)+prev_file-info.trialStart(end));
             end
         end
 
@@ -193,6 +209,7 @@ for idx_f = 1:length(files)
         end
     end
     X = cat(1, X, X_band);
+    prev_file = size(X,1);
 end
 if ~isempty(info.trialStart)
     info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
