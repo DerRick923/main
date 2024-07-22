@@ -7,7 +7,7 @@ addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-W
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
 addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
-
+%% Here we compute the logband power for each run and plot for each band and run all the continuos feedback and the period thta goes from the cue to the cf with topoplots. As well as that we can plot the single topoplots for each class on each run
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};

@@ -8,8 +8,9 @@ addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-W
 addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
 addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
+%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
-
+%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/cnbi-smrtrain/toolboxes/cva'))
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -19,43 +20,52 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 
 
 % file info
-c_subject = 'c7';
+c_subject = 'h7';
 lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
 chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
 path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
-% path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\ ' subject '\gdf'];
-% ubuntu path = ['/home/riccardo/test_ws/records/ ' subject '/matselected_Trials];
-% ubuntu lap_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat'];
-% ubuntu chanlocs_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Chanlocs/new_chanlocs64.mat'];
+%path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\gdf'];
+
+% ubuntu path = ['/home/riccardo/test_ws/records/ ' c_subject '/matselected_Trials];
+%lap_path = '/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat';
+%chanlocs_path = '/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Chanlocs/new_chanlocs64.mat';
+
 classLb = {'Task 1','Task 2'};
 classes = [730,731];
 nclasses = length(classes);
 
-matfiles = dir(fullfile(path, '*.mat'));
 load(lap_path);
 load(chanlocs_path);
 
-%for ubuntu and gdf
-%files = dir(fullfile(path, '*.gdf'));
+%files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
+files = dir(fullfile(path, '*.mat'));
 
 band = {[6 9], [9 12], [8 14], [12 15], [15 18], [18 21]};
 nbands = length(band);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]); Rk=[];
-for i=1:length(matfiles)
-    file = fullfile(path, matfiles(i).name);
-    load(file); 
-    % file = fullfile(path, files(i).name);
-    % [signal,header] = sload(file);
+for i=1:length(files)
+    file = fullfile(path, files(i).name);
 
-    curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
+    load(file);
+    %[signal,header] = sload(file);
+    
+    curr_s = signal(:,1:39);
     %slap = curr_s*lap;
     %curr_s = slap;
     curr_h = header.EVENT;
+    isgdf = contains(file, '.gdf');
+    iscalibration = contains(file, 'calibration');
+    if isgdf && iscalibration
+        start = find(curr_h.TYP == 1,1,'first');
+        curr_h.TYP = curr_h.TYP(start:end);
+        curr_h.POS = curr_h.POS(start:end);
+        curr_h.DUR = curr_h.DUR(start:end);
+    end
     % Create Rk vector (run)
     cRk = i*ones(size(curr_s,1),1);
     Rk = cat(1,Rk,cRk);
-    % concateno eventi
+    % Concatenate events
     events.TYP = cat(1, events.TYP, curr_h.TYP);
     events.DUR = cat(1, events.DUR, curr_h.DUR);
     events.POS = cat(1, events.POS, curr_h.POS + size(s, 1));
@@ -148,7 +158,7 @@ end
 
 %% Visualization
 %% Visualization Fisher score
-disp('[proc] |- Visualizing fisher score for offline runs');
+disp('[proc] |- Visualizing fischer score for offline runs');
 freq_intervals = {'6-9', '9-12', '8-14', '12-15', '15-18', '18-21'};
 OfflineRuns = unique(new_Rk);
 NumCols = length(OfflineRuns);
@@ -240,7 +250,8 @@ recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ'
 % corrispondenti ai canali che vengono registrati
 
 % saving subject id
-save('c_subject','c_subject');
+subj = 'C:\Users\User\Desktop\MATLAB\CVSA\main\c_subject.mat';
+save(subj,'c_subject');
 
 % saving fischer score for UI
 feature_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\fischer_scores.mat'];

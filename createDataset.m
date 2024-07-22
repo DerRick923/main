@@ -2,29 +2,21 @@
 % create the dataset log band power, selected channels and selected freq
 function [sfile,X,y] = createDataset(c_subject)
 
+addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
+addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
+addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
+addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
+addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
+%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA'))
+addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
+%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/cnbi-smrtrain/toolboxes/cva'))
+
 %% informations
 train_percentage = 0.75;
 classes = [730 731];
 
 filterOrder = 4;
-% % select the channels and bands according to the name of the subject
-% if c_subject == 'c7'
-% %     bands = {[15 18],  [18 21]};
-% %     selchs = {{'P5', 'PO5', 'PO7'}, {'P3', 'P5'}};
-%     bands = {[10 12],  [16 18]};
-%     selchs = {{'PO5', 'PO7'}, {'PO4', 'PO6'}};
-% elseif c_subject == 'g2'
-%     bands = {[6 9], [15 18], [18 21]};
-%     selchs = {{'PO8', 'P6'},  {'PO7'}, {'PO7', 'OZ'}};
-% elseif c_subject == 'h7'
-%     selchs = {{'P4', 'PO4', 'O2', 'PO6', 'PO8'}}; 
-%     bands = {[8 14]};
-% elseif c_subject == 'd6'
-%     selchs = {{'P3', 'P1', 'P5'}};
-%     bands = {[8 14], [5, 12]};
-% else
-%     disp('No such subject')
-% end
+
 features_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\selected_features.mat'];
 %feature_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
 features = load(features_file); %struct
@@ -34,6 +26,7 @@ selchs = features.selectedFeatures(:,1);
 sampleRate = 512;
 %sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
 sfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_f_cf_selectedband.mat'];
+mfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat'];
 
 %path = ['/home/riccardo/test_ws/records/' c_subject '/mat_selectedTrials'];
 %path = ['home/riccardo/test_ws/records/' c_subject '/gdf];
@@ -48,13 +41,22 @@ channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4'
 %% initialization variable to save
 X = [];
 y = [];
+Ck = [];
+final_bands = [];
+for i=1:size(selchs,2)
+    c_selchs = selchs{i};
+    c_band = bands{i};
+    for j=1:size(c_selchs, 2)
+        final_bands = cat(1, final_bands, c_band);
+    end
+end
 
 info.classes = classes;
 info.sampleRate = sampleRate;
 info.selchs = selchs;
 info.idx_selchs = [];
 info.files = {};
-info.band = bands;
+info.band = final_bands;
 info.trialStart = [];
 info.trialDUR = [];
 info.filterOrder = 4;
@@ -81,6 +83,9 @@ for idx_f = 1:length(files)
     cfPOS  = events.POS(events.TYP == 781);
     cfDUR  = events.DUR(events.TYP == 781);
     nTrials = length(cueTYP);
+
+    trialStart = find(events.TYP == 1);
+    targetHit = find(events.TYP == 897);
      if(contains(file, 'calibration')) %% for gdf not mat
         cuePOS = cuePOS(3:end) - 1;
         cueTYP = cueTYP(3:end);
@@ -124,11 +129,16 @@ for idx_f = 1:length(files)
             data = signal(start_trial:end_trial,:);
 
             % eye movement check
-            threshold = 2.5e+04; %[25 mV]
+            threshold = 3.5e+04; %[25 mV]
             disp('Checking data for eye movement')
-            result = eye_movement_check(data,channels_label,threshold); 
+            result = eye_movement_check(data,channels_label,threshold,sampleRate); 
                 if result
                     disp(['Eye movement detected: trial ' num2str(i) '/' num2str(nTrials) ' to be discarded'])
+                    %skip trial info from header
+                    events.TYP(trialStart(i):targetHit(i)) = 0;
+                    events.DUR(trialStart(i):targetHit(i)) = 0;
+                    events.POS(trialStart(i):targetHit(i)) = 0;
+
                     continue
                 else
                     disp('No eye movement detected')
@@ -136,8 +146,9 @@ for idx_f = 1:length(files)
 
             % application of the buffer
             if idx_band == 1
-            info.trialStart = cat(1, info.trialStart, size(X_temp,1)+prev_file);
+            info.trialStart = cat(1, info.trialStart, 1+size(X_temp,1)+prev_file);
             end
+
             nchunks = (end_trial-start_trial) / 32;
             for j = 1:nchunks
                 frame = data((j-1)*frameSize+1:j*frameSize,:);
@@ -203,16 +214,37 @@ for idx_f = 1:length(files)
             X_band = cat(2, X_band, X_temp(:,idx_interest_ch));
     
             if idx_f == 1
-                info.idx_selchs = cat(1, info.idx_selchs, idx_interest_ch);
+                info.idx_selchs = cat(2, info.idx_selchs, idx_interest_ch);
                 disp(size(info.idx_selchs))
             end
         end
     end
+   
     X = cat(1, X, X_band);
     prev_file = size(X,1);
-end
+    
+    % To save a matlab file, with signal and corrected events, for each gdf
+    % file after trial removal due to eye movement check
+    [~, pfilename] = fileparts(files(idx_f).name);        % Extract the filename (without extension) of the processed GDF file
+    sfilename = [pfilename '.mat'];
+    m_path = [mfile '\' sfilename];
+    save(m_path, 'header','signal');
+end   
+
 if ~isempty(info.trialStart)
     info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
+
+    disp('Checking for balanced dataset')
+    % Checks if the dataset is generated with equal number of classes
+    n_class1 = sum(Ck==classes(1));
+    n_class2 = sum(Ck==classes(2));
+    if n_class1 ~= n_class2
+    disp('Regenerate the dataset with balanced number of trials per class')
+    [X_new,y_new,info.trialStart,info.trialDUR] = balanced_dataset(X,y,classes,info.trialStart,info.trialDUR);
+    X = X_new;
+    y = y_new;
+    end
+
     %% save the values
     %X = X(:, idx_interest_ch);
     save(sfile, 'X', 'y', 'info');
