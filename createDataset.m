@@ -2,36 +2,27 @@
 % create the dataset log band power, selected channels and selected freq
 function [sfile,X,y] = createDataset(c_subject)
 
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
-addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
-addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
-%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA'))
-addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
-%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/cnbi-smrtrain/toolboxes/cva'))
+addpath(genpath('/home/riccardo/Desktop/CVSA'))
+addpath(genpath('/home/riccardo/lib/cnbi-smrtrain'))
+addpath(genpath('/home/riccardo/test_ws'))
+addpath(genpath('/home/riccardo/Desktop/eeglab2024.0'))
 
 %% informations
 train_percentage = 0.75;
 classes = [730 731];
-
+sampleRate = 512;
 filterOrder = 4;
 
-features_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\selected_features.mat'];
-%feature_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
-features = load(features_file); %struct
+features_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
+features = load(features_file);
 bands = features.selectedFeatures(:,2);
 selchs = features.selectedFeatures(:,1);
-% not modification needed for these informations
-sampleRate = 512;
-%sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
-sfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_f_cf_selectedband.mat'];
-mfile = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat'];
+
+sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
+mfile = ['/home/riccardo/test_ws/records/' c_subject '/mat'];
 
 %path = ['/home/riccardo/test_ws/records/' c_subject '/mat_selectedTrials'];
-%path = ['home/riccardo/test_ws/records/' c_subject '/gdf];
-%path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
-path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\gdf'];
+path = ['/home/riccardo/test_ws/records/' c_subject '/gdf'];
 files = dir(fullfile(path, '*.gdf'));
 
 channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
@@ -43,10 +34,10 @@ X = [];
 y = [];
 Ck = [];
 final_bands = [];
-for i=1:size(selchs,2)
+for i=1:size(selchs,1)
     c_selchs = selchs{i};
     c_band = bands{i};
-    for j=1:size(c_selchs, 2)
+    for j=1:size(c_selchs, 1)
         final_bands = cat(1, final_bands, c_band);
     end
 end
@@ -67,7 +58,6 @@ info.startNewFile = [0];
 for idx_f = 1:length(files)
     file = fullfile(path, files(idx_f).name);
     disp(['file (' num2str(idx_f) '/' num2str(length(files))  '): ', file])
-    %file = '/home/paolo/prova32ch.gdf';
     %load(file);
     [signal, header] = sload(file);
     info.files = cat(1, info.files, files(idx_f).name);
@@ -129,7 +119,7 @@ for idx_f = 1:length(files)
             data = signal(start_trial:end_trial,:);
 
             % eye movement check
-            threshold = 3.5e+04; %[25 mV]
+            threshold = 2.5e+04; %[25 mV]
             disp('Checking data for eye movement')
             result = eye_movement_check(data,channels_label,threshold,sampleRate); 
                 if result
@@ -163,19 +153,19 @@ for idx_f = 1:length(files)
                 % apply low and high pass filters
                 [s_low, zi_low] = filter(c_b_low,c_a_low,buffer,zi_low);
                 [tmp_data,zi_high] = filter(c_b_high,c_a_high,s_low,zi_high);
-                s_band = cat(1, s_band, tmp_data);
+                %s_band = cat(1, s_band, tmp_data);
 
                 % apply pow
                 tmp_data = power(tmp_data, 2);
-                s_pow = cat(1, s_pow, tmp_data);
+                %s_pow = cat(1, s_pow, tmp_data);
 
                 % apply average
                 tmp_data = mean(tmp_data, 1);
-                s_avg = cat(1, s_avg, tmp_data);
+                %s_avg = cat(1, s_avg, tmp_data);
 
                 % apply log
                 tmp_data = log(tmp_data);
-                s_log = cat(1, s_log, tmp_data);
+                %s_log = cat(1, s_log, tmp_data);
 
                 % save in the dataset
                 X_temp = cat(1, X_temp, tmp_data);
@@ -215,7 +205,6 @@ for idx_f = 1:length(files)
     
             if idx_f == 1
                 info.idx_selchs = cat(2, info.idx_selchs, idx_interest_ch);
-                disp(size(info.idx_selchs))
             end
         end
     end
@@ -227,14 +216,14 @@ for idx_f = 1:length(files)
     % file after trial removal due to eye movement check
     [~, pfilename] = fileparts(files(idx_f).name);        % Extract the filename (without extension) of the processed GDF file
     sfilename = [pfilename '.mat'];
-    m_path = [mfile '\' sfilename];
+    m_path = [mfile '/' sfilename];
     save(m_path, 'header','signal');
 end   
 
 if ~isempty(info.trialStart)
     info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
 
-    disp('Checking for balanced dataset')
+    
     % Checks if the dataset is generated with equal number of classes
     n_class1 = sum(Ck==classes(1));
     n_class2 = sum(Ck==classes(2));
@@ -244,12 +233,12 @@ if ~isempty(info.trialStart)
     X = X_new;
     y = y_new;
     end
-
+    disp('Checked balanced dataset. Save dataset variables.')
     %% save the values
     %X = X(:, idx_interest_ch);
     save(sfile, 'X', 'y', 'info');
 else
-    error('No trials to be saved')
+    disp('No trials to be saved')
     
 end
 

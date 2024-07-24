@@ -3,14 +3,10 @@ close all
 clear all
 clc
 
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
-addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
-addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
-%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA'))
-addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
-%addpath(genpath('/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/cnbi-smrtrain/toolboxes/cva'))
+addpath(genpath('/home/riccardo/Desktop/CVSA'))
+addpath(genpath('/home/riccardo/lib/cnbi-smrtrain'))
+addpath(genpath('/home/riccardo/test_ws'))
+addpath(genpath('/home/riccardo/Desktop/eeglab2024.0'))
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -21,42 +17,41 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 
 % file info
 c_subject = 'h7';
-lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
-chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
-path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\mat_selectedTrials'];
-%path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\gdf'];
+prompt = 'Enter "calibration" or "evaluation": ';
+test_typ = input(prompt, 's');
 
-% ubuntu path = ['/home/riccardo/test_ws/records/ ' c_subject '/matselected_Trials];
-%lap_path = '/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat';
-%chanlocs_path = '/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Chanlocs/new_chanlocs64.mat';
+%path = ['/home/riccardo/test_ws/records/' c_subject '/matselected_Trials];
+path = ['/home/riccardo/test_ws/records/' c_subject '/gdf/' test_typ];
+%path = ['/home/riccardo/test_ws/records/' c_subject '/gdf/calibration'];
+chanlocs_path = '/home/riccardo/Desktop/CVSA/Chanlocs/new_chanlocs64.mat';
 
 classLb = {'Task 1','Task 2'};
 classes = [730,731];
 nclasses = length(classes);
 
-load(lap_path);
+
 load(chanlocs_path);
 
-%files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
-files = dir(fullfile(path, '*.mat'));
+files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
+%files = dir(fullfile(path, '*.mat'));
 
-band = {[6 9], [9 12], [8 14], [12 15], [15 18], [18 21]};
+band = {[8 10], [10 12], [12 14], [14 16], [16 18]};
 nbands = length(band);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]); Rk=[];
 for i=1:length(files)
     file = fullfile(path, files(i).name);
 
-    load(file);
-    %[signal,header] = sload(file);
+    %load(file);
+    [signal,header] = sload(file);
     
     curr_s = signal(:,1:39);
     %slap = curr_s*lap;
     %curr_s = slap;
     curr_h = header.EVENT;
-    isgdf = contains(file, '.gdf');
-    iscalibration = contains(file, 'calibration');
-    if isgdf && iscalibration
+    isevaluation = contains(file, '.163108');
+    
+    if strcmp(test_typ, "calibration") || (strcmp(test_typ, "evaluation") && isevaluation)
         start = find(curr_h.TYP == 1,1,'first');
         curr_h.TYP = curr_h.TYP(start:end);
         curr_h.POS = curr_h.POS(start:end);
@@ -159,7 +154,7 @@ end
 %% Visualization
 %% Visualization Fisher score
 disp('[proc] |- Visualizing fischer score for offline runs');
-freq_intervals = {'6-9', '9-12', '8-14', '12-15', '15-18', '18-21'};
+freq_intervals = {'8-10', '10-12', '12-14', '14-16', '16-18'};
 OfflineRuns = unique(new_Rk);
 NumCols = length(OfflineRuns);
 climits = [];
@@ -180,7 +175,7 @@ for rId = 1:length(OfflineRuns)
         xlabel('Hz');
         ylabel('channel');
         
-        title(['Calibration run ' num2str(OfflineRuns(rId))]);
+        title([ test_typ ' run ' num2str(OfflineRuns(rId))]);
         
         climits = cat(2, climits, get(gca, 'CLim'));
         handles(OfflineRuns(rId)) = gca;
@@ -249,21 +244,30 @@ recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ'
 % cuetocfeed contiene i valori della logband power per ogni frequency band
 % corrispondenti ai canali che vengono registrati
 
+if strcmp(test_typ, "evaluation")
+    feature_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/fischer_scores_ev.mat'];
+    logband_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_power_ev.mat'];
+else
+    feature_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/fischer_scores.mat'];
+    logband_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_power.mat'];
+end
+
 % saving subject id
-subj = 'C:\Users\User\Desktop\MATLAB\CVSA\main\c_subject.mat';
+subj = '/home/riccardo/Desktop/CVSA/main/c_subject.mat';
 save(subj,'c_subject');
 
 % saving fischer score for UI
-feature_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\fischer_scores.mat'];
-% feature_file = [/home/riccardo/test_ws/records/' c_subject '/dataset/fischer_scores.mat'];
 rowLabels = channels_label(find(~strcmp(channels_label,'')));
 colLabels = freq_intervals;
 cva_selected = cva_total(:,a)';
 save(feature_file, 'cva_selected', 'rowLabels', 'colLabels','band');
 
 % saving logband for UI
-logband_file = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' c_subject '\dataset\logband_power.mat'];
-% logband_file = [/home/riccardo/test_ws/records/' c-subject '/dataset/logband_power.mat'];
 logbandPower = cuetoc_feed;
 electrodePos = chanlocs;
 save(logband_file,'logbandPower','electrodePos');
+
+
+%% Launching UI for feature selection, via FS, for dataset creation
+app2()
+%Check in app2code calibration amd evaluation paths

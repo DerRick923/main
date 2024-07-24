@@ -2,11 +2,14 @@ close all
 clear all
 clc
 
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
-addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
-addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
+% addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\matlab'))
+% addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t200_FileAccess'))
+% addpath(genpath('C:\Users\User\Desktop\biosig-2.5.1-Windows-64bit\biosig-2.5.1-Windows-64bit\share\matlab\t250_ArtifactPreProcessingQualityControl'))
+% addpath(genpath('C:\Users\User\Desktop\eeglab2024.0'))
 addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA'))
+%addpath(genpath('/home/riccardo/Desktop/CVSA'))
+addpath(genpath('C:\Users\User\Desktop\MATLAB\CVSA\cnbi-smrtrain\toolboxes\cva'))
+%addpath(genpath('/home/riccardo/lib/cnbi-smrtrain'))
 %% Here we compute the logband power for each run and plot for each band and run all the continuos feedback and the period thta goes from the cue to the cf with topoplots. As well as that we can plot the single topoplots for each class on each run
 
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
