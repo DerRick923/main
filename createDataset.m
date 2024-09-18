@@ -1,6 +1,6 @@
 
 % create the dataset log band power, selected channels and selected freq
-function [sfile,X,y] = createDataset(c_subject)
+function [sfile,X,y] = createDataset(c_subject,TestType) %aggiungere test_typ
 
 addpath(genpath('/home/riccardo/Desktop/CVSA'))
 addpath(genpath('/home/riccardo/lib/cnbi-smrtrain'))
@@ -18,12 +18,26 @@ features = load(features_file);
 bands = features.selectedFeatures(:,2);
 selchs = features.selectedFeatures(:,1);
 
-sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/logband_f_cf_selectedband.mat'];
+if strcmp(TestType, "calibration")
+    sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/dataset_calib.mat'];
+else
+    sfile = ['/home/riccardo/test_ws/records/' c_subject '/dataset/dataset_eval.mat'];
+end
+
 mfile = ['/home/riccardo/test_ws/records/' c_subject '/mat'];
 
 %path = ['/home/riccardo/test_ws/records/' c_subject '/mat_selectedTrials'];
-path = ['/home/riccardo/test_ws/records/' c_subject '/gdf'];
+path = ['/home/riccardo/test_ws/records/' c_subject '/gdf/' TestType];
 files = dir(fullfile(path, '*.gdf'));
+% % Initialize an array to store the filtered files
+% filteredFiles = [];
+% 
+% % Loop through all files and check if they contain the user string
+% for i = 1:length(allFiles)
+%     if contains(allFiles(i).name, TestType)
+%         filteredFiles = [filteredFiles; allFiles(i)];
+%     end
+% end
 
 channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
@@ -75,8 +89,8 @@ for idx_f = 1:length(files)
     nTrials = length(cueTYP);
 
     trialStart = find(events.TYP == 1);
-    targetHit = find(events.TYP == 897);
-     if(contains(file, 'calibration')) %% for gdf not mat
+    targetHit = find(events.TYP == 897 | events.TYP == 898);
+     if (strcmp(TestType, 'calibration')) %|| (strcmp(TestType,'evaluation') && (contains(file,'g2'))) %((contains(file,'163108') && contains(file,'h7')) || ))%% for gdf not mat
         cuePOS = cuePOS(3:end) - 1;
         cueTYP = cueTYP(3:end);
         cueDUR = cueDUR(3:end);
@@ -92,10 +106,6 @@ for idx_f = 1:length(files)
         prev_file = 0;
     end
     X_band = [];
-    s_band = [];
-    s_pow = [];
-    s_avg = [];
-    s_log = [];
 
     for idx_band = 1:length(bands)
         c_band = bands{idx_band};
@@ -106,6 +116,7 @@ for idx_f = 1:length(files)
         zi_high = [];
         X_temp = [];
         y_temp = [];
+        tmp_data = [];
 
         %% Iterate over trials
         for i=1:nTrials
@@ -182,7 +193,7 @@ for idx_f = 1:length(files)
         %% take only interested values
         % Check if trials are stored in X_temp
         if isempty(X_temp)
-            disp('Trial skipped')
+            disp('Trials skipped')
             continue
         else
             disp('      Take only interested channels for that band')
@@ -223,7 +234,6 @@ end
 if ~isempty(info.trialStart)
     info.startTest = info.trialStart(floor(train_percentage * size(info.trialStart,1)));
 
-    
     % Checks if the dataset is generated with equal number of classes
     n_class1 = sum(Ck==classes(1));
     n_class2 = sum(Ck==classes(2));

@@ -11,12 +11,12 @@ addpath(genpath('/home/riccardo/Desktop/eeglab2024.0'))
 channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
        '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
  
-% channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
-%         'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
+%all_channels = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4', 'CP1', 'CP2', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', 'EOG', ...
+%       'F1', 'F2', 'FC3', 'FCZ', 'FC4', 'C1', 'C2', 'CP3', 'CP4', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
 
 
 % file info
-c_subject = 'h7';
+c_subject = 'c7';
 prompt = 'Enter "calibration" or "evaluation": ';
 test_typ = input(prompt, 's');
 
@@ -31,9 +31,18 @@ nclasses = length(classes);
 
 
 load(chanlocs_path);
-
-files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
 %files = dir(fullfile(path, '*.mat'));
+files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
+% % Initialize an array to store the filtered files
+% filteredFiles = [];
+% 
+% % Loop through all files and check if they contain the user string
+% for i = 1:length(allFiles)
+%     if contains(allFiles(i).name, test_typ)
+%         filteredFiles = [filteredFiles; allFiles(i)];
+%     end
+% end
+
 
 band = {[8 10], [10 12], [12 14], [14 16], [16 18]};
 nbands = length(band);
@@ -49,9 +58,8 @@ for i=1:length(files)
     %slap = curr_s*lap;
     %curr_s = slap;
     curr_h = header.EVENT;
-    isevaluation = contains(file, '.163108');
     
-    if strcmp(test_typ, "calibration") || (strcmp(test_typ, "evaluation") && isevaluation)
+    if strcmp(test_typ, "calibration")
         start = find(curr_h.TYP == 1,1,'first');
         curr_h.TYP = curr_h.TYP(start:end);
         curr_h.POS = curr_h.POS(start:end);
@@ -66,7 +74,8 @@ for i=1:length(files)
     events.POS = cat(1, events.POS, curr_h.POS + size(s, 1));
     s = cat(1, s, curr_s);
 end
-
+trial_begin = find(events.TYP == 1);
+targetHit = find(events.TYP == 897 | events.TYP == 898);
 %% Create Vector labels
 [nsamples,nchannels] = size(s);
 [feedb_pos, feedb_dur, fix_dur, fix_pos, cue_dur, cue_pos, ntrials] = extract_info_label(events, 781, 786, [730 731]);
@@ -93,11 +102,10 @@ tCk = zeros(ntrials,1);
 for trId=1:ntrials
     cstart = TrialStart(trId);
     cstop = cstart + trial_dur - 1;
-
     DataperTrial(:,:,:,trId) = s_processed(cstart:cstop,:,:);
-
     c_TrialData = s_processed(cstart:cstop,:,:);
     TrialData = cat(1,TrialData,c_TrialData);
+
     c_Rk = Rk(cstart:cstop,1);
     new_Rk = cat(1,new_Rk,c_Rk);
     c_Ck = Ck(cstart:cstop);
@@ -105,15 +113,15 @@ for trId=1:ntrials
     tCk(trId) = unique(nonzeros(Ck(cstart:cstop)));
 end
 
-%% Baseline extraction
-% minFix_dur = min(FixStop - FixStart);
-% Reference = NaN(minFix_dur, nchannels, ntrials);
-% for trId=1:ntrials
-%     cstart = FixStart(trId); %=TrialStart(trId) o fix_pos(trId)
-%     cstop = cstart+ minFix_dur - 1;
-%     Reference(:,:,trId) = movavg_alpha(cstart:cstop,:);
-% end
-%Baseline = repmat(mean(Reference),[size(TrialData,1) 1 1]);
+%% Baseline extraction for each trial
+minFix_dur = min(FixStop - FixStart);
+Reference = NaN(minFix_dur, nchannels, nbands, ntrials);
+for trId=1:ntrials
+    cstart = FixStart(trId); %=TrialStart(trId) o fix_pos(trId)
+    cstop = cstart+ minFix_dur - 1;
+    Reference(:,:,:,trId) = s_processed(cstart:cstop,:,:);
+end
+Baseline = repmat(mean(Reference),[size(DataperTrial,1) 1 1 1]);
 
 %% Compute ERD and LogBandPOwer [samples x channels x bands] con tutti i trial
 %ERD = log(TrialData./Baseline);
@@ -217,6 +225,8 @@ title(['Total FS Subj: ' c_subject]);
 
 
 %% Topoplot LogBand power
+
+%ERDpertrial = log(DataperTrial./Baseline);
 ERDpertrial = log(DataperTrial);
 chanlocs_label = {chanlocs.labels};
 fixPeriod = [1/events.SampleRate 2]*events.SampleRate;
@@ -228,7 +238,9 @@ recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ'
 '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
     cuetocf_erd1 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(1)), 4), 1);
     cuetocf_erd2 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(2)), 4), 1);
-    cuetocf_erd = squeeze(cuetocf_erd2-cuetocf_erd1);
+    cuetocf_std1 = std(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk ==classes(1)),1),0,4);
+    cuetocf_std2 = std(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(2)),1),0,4);
+    cuetocf_erd = squeeze((cuetocf_erd2-cuetocf_erd1)./sqrt(cuetocf_std1.^2+cuetocf_std2.^2));
     cuetoc_feed = zeros(64, nbands);
         for i=1:length(chanlocs_label)
             for j = 1:length(recorded_channels)
@@ -269,5 +281,6 @@ save(logband_file,'logbandPower','electrodePos');
 
 
 %% Launching UI for feature selection, via FS, for dataset creation
-app2()
-%Check in app2code calibration amd evaluation paths
+global TestType
+TestType = test_typ;
+app = app2;
