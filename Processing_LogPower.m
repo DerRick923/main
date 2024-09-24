@@ -19,32 +19,36 @@ channels_label = {'FP1', 'FP2', 'F3', 'FZ', 'F4', 'FC1', 'FC2', 'C3', 'CZ', 'C4'
 
 % file info
 subject = 'c7';
-lap_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Laplacian\lap_39ch_CVSA.mat';
-chanlocs_path = 'C:\Users\User\Desktop\MATLAB\CVSA\Chanlocs\new_chanlocs64.mat';
-path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\' subject '\mat_selectedTrials'];
-% path = ['C:\Users\User\Desktop\MATLAB\CVSA\records\ ' subject '\gdf'];
-% ubuntu path = ['/home/riccardo/test_ws/records/ ' subject '/matselected_Trials];
+prompt = 'Enter "calibration" or "evaluation": ';
+test_typ = input(prompt, 's');
+
+path = ['/home/riccardo/test_ws/records/' subject '/gdf/' test_typ];
 % ubuntu lap_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Laplacian/lap_39ch_CVSA.mat'];
-% ubuntu chanlocs_path = ['/media/riccardo/A658ED4B58ED1B37/Users/User/Desktop/MATLAB/CVSA/Chanlocs/new_chanlocs64.mat'];
+chanlocs_path = ['/home/riccardo/Desktop/CVSA/Chanlocs/new_chanlocs64.mat'];
 classLb = {'Task 1','Task 2'};
 classes = [730,731];
 
-matfiles = dir(fullfile(path, '*.mat'));
-load(lap_path);
+files = dir(fullfile(path, '*.gdf'));
 load(chanlocs_path);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]);
-band = {[6 9], [9 12], [8 14], [12 15], [15 18], [18 21]};
+band = {[8 10], [10 12], [12 14], [14 16], [16 18], [8 14]};
 
 for f_idx=1:length(band)
     sel_band = band{f_idx}; %[hz]
-    for i=1:length(matfiles)
-        file = fullfile(path, matfiles(i).name);
-        load(file);
+    for i=1:length(files)
+        file = fullfile(path, files(i).name);
+        [signal,header]=sload(file);
         curr_s = signal(:,1:39);    %ho 39 canali e la matrice ha 40 colonne, quindi seleziono solo le colonne riferite ai canali
         %slap = curr_s*lap;
         %curr_s = slap;
         curr_h = header.EVENT;
+        if strcmp(test_typ, "calibration")
+            start = find(curr_h.TYP == 1,1,'first');
+            curr_h.TYP = curr_h.TYP(start:end);
+            curr_h.POS = curr_h.POS(start:end);
+            curr_h.DUR = curr_h.DUR(start:end);
+        end
         % concateno eventi
         events.TYP = cat(1, events.TYP, curr_h.TYP);
         events.DUR = cat(1, events.DUR, curr_h.DUR);

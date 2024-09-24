@@ -1,4 +1,4 @@
-function [feedb_pos, feedb_dur, fix_dur, fix_pos, cue_dur, cue_pos, ntrials] = extract_info_label(header, feedb_event, fix_event, cue_events)
+function [feedb_pos, feedb_dur, fix_pos, fix_dur, cue_pos, cue_dur, ntrials] = extract_info_label(header, feedb_event, fix_event, cue_events)
 
     feedb_dur = header.DUR(header.TYP == feedb_event);
     feedb_pos = header.POS(header.TYP == feedb_event);

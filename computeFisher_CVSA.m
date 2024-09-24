@@ -16,7 +16,7 @@ channels_label = {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P
 
 
 % file info
-c_subject = 'c7';
+c_subject = 'h7';
 prompt = 'Enter "calibration" or "evaluation": ';
 test_typ = input(prompt, 's');
 
@@ -32,7 +32,7 @@ nclasses = length(classes);
 
 load(chanlocs_path);
 %files = dir(fullfile(path, '*.mat'));
-files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
+files = dir(fullfile(path, '*.gdf'));  %for  and gdf
 % % Initialize an array to store the filtered files
 % filteredFiles = [];
 % 
@@ -44,7 +44,7 @@ files = dir(fullfile(path, '*.gdf'));  %for ubuntu and gdf
 % end
 
 
-band = {[8 10], [10 12], [12 14], [14 16], [16 18]};
+band = {[8 10], [10 12], [12 14], [14 16], [16 18], [8 14]};
 nbands = length(band);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]); Rk=[];
@@ -78,7 +78,7 @@ trial_begin = find(events.TYP == 1);
 targetHit = find(events.TYP == 897 | events.TYP == 898);
 %% Create Vector labels
 [nsamples,nchannels] = size(s);
-[feedb_pos, feedb_dur, fix_dur, fix_pos, cue_dur, cue_pos, ntrials] = extract_info_label(events, 781, 786, [730 731]);
+[feedb_pos, feedb_dur, fix_pos, fix_dur, cue_pos, cue_dur, ntrials] = extract_info_label(events, 781, 786, [730 731]);
 
 %% Extract trial data
 [TrialStart, TrialStop, FixStart, FixStop, Ck, Tk] = extract_trial_info(s, events, fix_pos, fix_dur, feedb_pos, feedb_dur, cue_pos, ntrials);
@@ -161,8 +161,8 @@ end
 
 %% Visualization
 %% Visualization Fisher score
-disp('[proc] |- Visualizing fischer score for offline runs');
-freq_intervals = {'8-10', '10-12', '12-14', '14-16', '16-18'};
+disp('[proc] |- Visualizing fischer score');
+freq_intervals = {'8-10', '10-12', '12-14', '14-16', '16-18', '8-14'};
 OfflineRuns = unique(new_Rk);
 NumCols = length(OfflineRuns);
 climits = [];
@@ -231,15 +231,14 @@ ERDpertrial = log(DataperTrial);
 chanlocs_label = {chanlocs.labels};
 fixPeriod = [1/events.SampleRate 2]*events.SampleRate;
 cuePeriod = [2 3]*events.SampleRate;
-cfPeriod = [3 4; 4 5; 5 6; 6 (trial_dur/events.SampleRate)]*events.SampleRate;
-    
+cfPeriod = [3 (trial_dur/events.SampleRate)]*events.SampleRate;
 %Select channels
 recorded_channels =  {'', '', '', '', '', '', '', '', '', '', '', '', 'P3', 'PZ', 'P4', 'POZ', 'O1', 'O2', '', ...
 '', '', '', '', '', '', '', '', '', 'P5', 'P1', 'P2', 'P6', 'PO5', 'PO3', 'PO4', 'PO6', 'PO7', 'PO8', 'OZ'};
-    cuetocf_erd1 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(1)), 4), 1);
-    cuetocf_erd2 = mean(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(2)), 4), 1);
-    cuetocf_std1 = std(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk ==classes(1)),1),0,4);
-    cuetocf_std2 = std(mean(ERDpertrial(cuePeriod(1):cfPeriod(2), :, :, tCk == classes(2)),1),0,4);
+    cuetocf_erd1 = mean(mean(ERDpertrial(cfPeriod(1):cfPeriod(2), :, :, tCk == classes(1)), 4), 1);
+    cuetocf_erd2 = mean(mean(ERDpertrial(cfPeriod(1):cfPeriod(2), :, :, tCk == classes(2)), 4), 1);
+    cuetocf_std1 = std(mean(ERDpertrial(cfPeriod(1):cfPeriod(2), :, :, tCk ==classes(1)),1),0,4);
+    cuetocf_std2 = std(mean(ERDpertrial(cfPeriod(1):cfPeriod(2), :, :, tCk == classes(2)),1),0,4);
     cuetocf_erd = squeeze((cuetocf_erd2-cuetocf_erd1)./sqrt(cuetocf_std1.^2+cuetocf_std2.^2));
     cuetoc_feed = zeros(64, nbands);
         for i=1:length(chanlocs_label)

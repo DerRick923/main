@@ -25,22 +25,32 @@ path = ['/home/riccardo/test_ws/records/' c_subject '/gdf/' test_typ];
 %path = ['/home/riccardo/test_ws/records/' c_subject '/gdf/calibration'];
 chanlocs_path = '/home/riccardo/Desktop/CVSA/Chanlocs/new_chanlocs64.mat';
 load(chanlocs_path);
-features_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
-features = load(features_file);
-%selbands = features.selectedFeatures(:,2);
-selchs = features.selectedFeatures(:,1);
-channles_string = string(channels_label);
 
-classLb = {'CVSA Left','CVSA Right'};
+
+classLb = {'Bottom Left','Bottom Right'};
 classes = [730,731];
 nclasses = length(classes);
+features_file = ['/home/riccardo/test_ws/records/' c_subject '/dataset/selected_features.mat'];
+features = load(features_file);
+selchs = unique(features.selectedFeatures(:,1));
+% Select a random channel to compare erd with
+nonempty_idx = find(~strcmp(channels_label, '') & ~ismember(channels_label, selchs));
+rand_idx = nonempty_idx(randi(length(nonempty_idx)));
+selchs{end+1} = channels_label{rand_idx};
+selbands = features.selectedFeatures(:,2);
+channles_string = string(channels_label);
+normalization = false; %if false logband else erd
 
+th_eog = 2.5e4;
+sampleRate = 512;
+t_window = 1; %[s]
+filtOrder = 4;
 
 
 %files = dir(fullfile(path, '*.mat'));
 files = dir(fullfile(path, '*.gdf'));
 
-band = {[8 10], [10 12], [12 14], [14 16], [16 18]};
+band = {[8 10], [10 12], [12 14], [14 16], [16 18],[8 14]};
 nbands = length(band);
 
 s=[]; events = struct('TYP',[],'POS',[],'SampleRate',512,'DUR',[]); Rk=[];
@@ -61,6 +71,38 @@ for i=1:length(files)
         curr_h.POS = curr_h.POS(start:end);
         curr_h.DUR = curr_h.DUR(start:end);
     end
+    % Calcolo ERD per singolo file
+    nchannels=size(curr_s,2);
+    [feedb_pos, feedb_dur, fix_pos, fix_dur, cue_pos, ~, ntrials] = extract_info_label(curr_h, 781, 786, [730 731]);
+    [TrialStart, TrialStop, FixStart, FixStop, Ck, ~] = extract_trial_info(curr_s, curr_h, fix_pos, fix_dur, feedb_pos, feedb_dur, cue_pos, ntrials);
+    for ch=1:length(selchs)
+        chan_idx = find(selchs{ch}==channles_string);
+        figure()
+        for idx_band=1:nbands
+            c_band = band{idx_band};
+            s_movavg = data_processing(curr_s, nchannels, sampleRate, c_band, filtOrder, t_window);
+            [ERD, minDur, minDurFix,tCk] = compute_ERDERS(s_movavg, TrialStart, TrialStop, FixStart, FixStop, nchannels, ntrials, Ck, normalization);
+            t=linspace(0,minDur,minDur);
+            c_cfPeriod = [3*sampleRate minDur];
+            subplot(2,3,idx_band)
+            cERD_1 = mean(ERD(:,chan_idx,tCk==classes(1)),3);
+            cERD_2 = mean(ERD(:,chan_idx,tCk==classes(2)),3);
+          % cERD_1 = mean(ERD(c_cfPeriod(1):c_cfPeriod(2),chan_idx,tCk==classes(1)),3);
+          % cERD_2 = mean(ERD(c_cfPeriod(1):c_cfPeriod(2),chan_idx,tCk==classes(2)),3);
+            plot(t,cERD_1)
+            grid on              
+            hold on            
+            plot(t,cERD_2)                           
+            hold off              
+            axis tight             
+            legend('Bottom left (730)','Bottom right (731)')              
+            title(['[' num2str(c_band(1)) '-' num2str(c_band(2)) '] Hz'])              
+            sgtitle(['File: ' files(i).name ' ERD/ERS Channel: ' selchs{ch}])                
+                
+         end
+    end
+
+
     % Create Rk vector (run)
     cRk = i*ones(size(curr_s,1),1);
     Rk = cat(1,Rk,cRk);
@@ -71,24 +113,21 @@ for i=1:length(files)
     s = cat(1, s, curr_s);
 end
 
-%% Create Vector labels
+% Create Vector labels
 [nsamples,nchannels] = size(s);
-[feedb_pos, feedb_dur, fix_dur, fix_pos, cue_dur, cue_pos, ntrials] = extract_info_label(events, 781, 786, [730 731]);
+[feedb_pos, feedb_dur, fix_pos, fix_dur, cue_pos, cue_dur, ntrials] = extract_info_label(events, 781, 786, [730 731]);
 
-%% Extract trial data
+% Extract trial data
 [TrialStart, TrialStop, FixStart, FixStop, Ck, Tk] = extract_trial_info(s, events, fix_pos, fix_dur, feedb_pos, feedb_dur, cue_pos, ntrials);
 
-%% Data processing
+% Data processing
 s_processed = NaN(nsamples,nchannels,nbands);
 for f_idx=1:nbands
     sel_band = band{f_idx}; %Hz
-    t_window = 1; %[s]
-    windowSize = events.SampleRate*t_window;
-    filtOrder = 4;
     s_movavg = data_processing(s, nchannels, events.SampleRate, sel_band, filtOrder, t_window);
     s_processed(:,:,f_idx) = s_movavg;
 end
-%% Trial extraction
+% Trial extraction
 %si estraggono i dati dalla fixation alla fine del feedback
 trial_dur = min(TrialStop-TrialStart);
 new_Rk = []; new_Ck = [];
@@ -119,27 +158,26 @@ Baseline = repmat(mean(Reference),[size(DataperTrial,1) 1 1 1]);
 %% Compute ERD and LogBandPOwer [samples x channels x bands] con tutti i trial
 ERD = log(DataperTrial./Baseline);
 
-%Segna canali di interesse e plotta ERD e ERS
-%Quali tempi?
-t = linspace(0,events.SampleRate,trial_dur);
-for chan=1:length(selchs)
-    chan_idx = find(selchs{chan}==channles_string);
-    figure(chan)
-    for i=1:nbands
-            c_band = band{i};
-            subplot(2,3,i)
-            cERD_1 = mean(ERD(:,chan_idx,i,tCk==classes(1)),4);
-            cERD_2 = mean(ERD(:,chan_idx,i,tCk==classes(2)),4);
-            plot(t,cERD_1)
+
+%Calcolo ERD per file concatenato
+T = linspace(0,trial_dur,trial_dur);
+for ch=1:length(selchs)
+    chan_idx = find(selchs{ch}==channles_string);
+    figure(length(files)*length(selchs)+ch)
+    for b=1:nbands
+            c_band = band{b};
+            subplot(2,3,b)
+            ERD_1 = mean(ERD(:,chan_idx,b,tCk==classes(1)),4);
+            ERD_2 = mean(ERD(:,chan_idx,b,tCk==classes(2)),4);
+            plot(T,ERD_1)
             grid on
             hold on
-            plot(t,cERD_2)
+            plot(T,ERD_2)
             hold off
             axis tight
             legend('Bottom left (730)','Bottom right (731)')
             title(['[' num2str(c_band(1)) '-' num2str(c_band(2)) ']'])
-            sgtitle(['ERD/ERS Subj: ' c_subject ' Channel: ' selchs{chan}])
+            sgtitle(['ERD/ERS Subj: ' c_subject ' Channel: ' selchs{ch}])
 
-    
     end
 end
